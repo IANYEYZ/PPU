@@ -1,0 +1,376 @@
+请制作一个可实际游玩的单机 roguelike deckbuilder 原型，暂定名《请上楼》（Please Proceed Upstairs）。
+
+游戏结构类似传统的路线式 deckbuilding roguelike：玩家选择角色进入一局游戏，在程序生成的地图上逐层前进，经历普通战斗、精英战斗、事件、商店、休息点和 Boss，通过战斗获得卡牌、遗物和其他资源，最终到达本轮终点。
+
+当前版本只实现第一个大角色类「办事员」，但代码架构必须允许未来增加更多大角色类。未来的角色可能拥有完全不同的专属资源、卡牌机制、战斗区域和 UI，因此不要把办事员的机制硬编码进通用战斗系统。
+
+## 技术与项目结构
+
+优先选择适合快速迭代的技术栈。游戏必须可以直接运行和游玩，而不是只有规则模拟器。
+
+将代码分为至少以下逻辑模块：
+
+* Game / Run state
+* Map generation
+* Combat state
+* Character definition
+* Card definition
+* Card instance
+* Effect system
+* Status / Power system
+* Relic system
+* Enemy system
+* Event system
+* Reward system
+* Deck / draw / discard / exhaust management
+* Target selection
+* Combat event bus
+* Save / load
+* UI
+
+卡牌、敌人、遗物、角色、事件和地图节点应尽可能 data-driven。添加普通新卡不应该需要修改战斗核心代码。
+
+Card Definition 和 Card Instance 必须分开。永久牌组中的一张牌以及战斗中的具体牌实例必须能够保存自己的升级、临时修改、批注、副本状态等信息。
+
+效果系统使用可组合的 Effect 对象或类似结构，而不是通过大量 card-name-specific if/else 实现。
+
+例如伤害、格挡、抽牌、消耗、复制、添加批注、移动卡牌、获得能量等都应作为可以组合和扩展的效果。
+
+建立统一 Combat Event Bus。至少支持：
+
+* turn start
+* turn end
+* card drawn
+* card played
+* card exhausted
+* card copied
+* annotation added
+* damage dealt
+* damage taken
+* block gained
+* energy spent
+* workflow packed
+* workflow item executed
+* combat start
+* combat end
+
+能力、遗物、状态效果等通过监听事件工作。
+
+## 基础战斗
+
+实现完整的基础 deckbuilder 战斗循环：
+
+* 玩家生命
+* 敌人生命
+* 能量
+* 抽牌堆
+* 手牌
+* 弃牌堆
+* 消耗堆
+* 每回合抽牌
+* 回合结束弃牌
+* 洗牌
+* 攻击
+* 格挡
+* 能力牌
+* 状态效果
+* 敌人 Intent
+* 多敌人战斗
+* 卡牌目标选择
+* 胜利和失败
+* 战斗奖励
+
+支持 Attack、Skill、Power 等基本卡牌类型。
+
+Power 打出后离开普通牌堆，并在本场战斗持续生效。
+
+实现 Retain、Exhaust、Ethereal 等通用关键词。
+
+不要在核心系统中假定每个角色都有相同的抽牌能力、能量生成能力或专属资源。
+
+## 办事员
+
+当前版本唯一实现的大角色类是「办事员」。
+
+办事员下面存在多个小角色。它们：
+
+* 共用办事员完整卡池；
+* 拥有不同初始牌组；
+* 拥有不同初始遗物；
+* 不拥有互相独立的专属卡池。
+
+因此 Character Class 与 Character Variant/Subcharacter 必须是不同的数据层。
+
+当前先支持三个办事员小角色槽位，具体名称、初始牌和初始遗物需要能够通过数据快速修改。
+
+办事员拥有以下三个核心专属系统。
+
+## 批注 Annotation
+
+战斗中，一张具体卡牌可以被添加「批注」。
+
+批注不是简单的状态标签，而是对这张具体 Card Instance 的效果进行追加或修改。
+
+例如一个批注可以：
+
+* 追加伤害效果
+* 追加格挡效果
+* 追加抽牌效果
+* 修改费用
+* 添加关键词
+* 添加其他 Effect
+
+一张牌可以拥有多个批注。
+
+批注应保存于该战斗中的 Card Instance 上。
+
+UI 必须允许玩家查看一张牌当前拥有的全部批注，并能够清楚看到修改后的最终效果。
+
+不要把批注实现成几个固定枚举。使用可扩展 modifier/effect structure，使以后能够加入新的批注类型。
+
+## 副本 Copy
+
+某些效果可以制造另一张牌的副本。
+
+复制时复制目标 Card Instance 当前的完整战斗状态，包括：
+
+* 基础卡牌
+* 升级状态
+* 当前批注
+* 当前适用的可复制修改
+
+副本本身仍然可以被复制。必须允许递归复制副本。
+
+副本具有 Copy 标记以及 Ethereal/虚无属性。
+
+如果副本在回合结束时仍留在手牌中，则按照虚无规则被消耗。
+
+如果副本被正常打出，则正常结算并进入弃牌堆；它不会因为是副本而自动消耗。以后重新抽到时，它仍然是副本，也仍然具有虚无。
+
+必须能够追踪副本来源，但不要限制 copy-of-copy。
+
+## 流程 Workflow
+
+战斗 UI 中增加独立的「流程」区域。
+
+玩家拥有一个尚未打包的当前流程。
+
+某些牌可以选择将自己计入流程，某些效果也可以将其他牌计入流程。
+
+一张牌被计入流程时：
+
+1. 正常支付本次要求的能量；
+2. 不执行该牌当前效果；
+3. 从普通卡牌区域中移除；
+4. 将该 Card Instance 当前完整状态加入当前流程。
+
+当前流程拥有三个位置。
+
+当第三张牌被加入后，该流程立即自动打包，成为一个独立的 Active Workflow，然后建立新的空流程。
+
+可以同时存在任意数量的 Active Workflow。
+
+每个玩家回合开始时，每个 Active Workflow 执行自己的当前项目。
+
+第一次执行第1项，下一个玩家回合执行第2项，再下一个执行第3项，然后重新回到第1项，如此循环。
+
+不同 Workflow 独立推进。
+
+Workflow Item 执行时：
+
+* 不支付卡牌费用；
+* 执行该卡当前保存的效果；
+* 不视为玩家 Play 了这张牌；
+* 不触发普通 card played 事件；
+* 触发独立的 workflow item executed 事件；
+* Exhaust、Ethereal 等描述卡牌结算后去向的属性不会把 Workflow Item 从 Workflow 中移除。
+
+Workflow 保存的是计入流程时该 Card Instance 的完整状态，包括升级和批注。
+
+UI 中必须清楚显示：
+
+* 当前尚未打包流程的0–3张牌；
+* 所有已打包流程；
+* 每个流程的三张牌；
+* 下一回合将执行哪一项；
+* 当前流程推进位置。
+
+不要限制同时存在的流程数量。
+
+## 地图
+
+这一版本同时实现完整的程序化地图生成。
+
+地图采用分层 DAG：
+
+* 玩家从底部开始；
+* 向上前进；
+* 每层存在若干节点；
+* 节点之间存在有向连接；
+* 玩家只能沿连接选择下一节点；
+* 最终汇聚到 Boss。
+
+至少支持：
+
+* Combat
+* Elite
+* Event
+* Shop
+* Rest
+* Treasure
+* Boss
+
+地图生成器必须使用 seed，并保证同一个 seed 生成相同地图。
+
+地图生成参数需要配置化，包括：
+
+* 总层数
+* 每层节点数量范围
+* 节点类型权重
+* Elite 数量/密度
+* Shop 数量/密度
+* Rest 数量/密度
+* 路径分叉程度
+* Boss 前节点规则
+
+生成结果必须保证：
+
+* 所有可选节点最终都能到达 Boss；
+* 不产生孤立节点；
+* 不产生无法继续的死路；
+* 至少存在多个有效路线选择；
+* 路线之间能够分叉和重新汇合；
+* 不应简单生成完全规则的网格。
+
+为 MapGenerator 编写自动测试，对大量 seed 进行生成并验证 connectivity 和基本约束。
+
+当前只需要实现第一大区域/Act 的地图内容，但地图系统本身支持未来多个 Act。
+
+## Run
+
+一局游戏至少包含：
+
+角色选择 → 地图 → 节点 → 战斗/事件 → 奖励 → 牌组变化 → 下一节点 → Boss → 结算。
+
+实现：
+
+* 当前牌组
+* 当前生命/最大生命
+* 金币
+* 遗物
+* 地图位置
+* seed
+* 已访问节点
+* 当前 Act
+* 卡牌奖励
+* 遗物奖励
+* 商店购买
+* 删除卡牌
+* 升级卡牌
+* 休息点
+
+先支持一个 Act。
+
+未来会扩展到多个 Act，并最终存在特殊第四区域，因此不要让 Run 逻辑假定游戏只有一个区域。
+
+## 内容数据
+
+不要自行大量设计正式卡牌。
+
+创建足够用于测试所有系统的 placeholder content 即可，包括：
+
+* 基础攻击/防御牌
+* 普通过牌
+* 能量操作
+* 批注测试牌
+* 副本测试牌
+* 流程测试牌
+* Power 测试牌
+* 若干遗物
+* 若干普通敌人
+* 至少一个 Elite
+* 至少一个 Boss
+* 若干事件
+
+将实际卡牌数值和正式内容与引擎代码分离，之后会提供正式卡表替换 placeholder。
+
+## UI
+
+当前重点是功能完整和信息清晰，不需要最终美术。
+
+战斗界面至少显示：
+
+* 玩家
+* 敌人及 Intent
+* 能量
+* 手牌
+* 抽牌堆数量
+* 弃牌堆数量
+* 消耗堆数量
+* 能力/状态
+* 遗物
+* 当前未打包流程
+* 所有 Active Workflow
+* End Turn
+
+点击牌堆可以查看其中卡牌。
+
+点击/悬停卡牌可以查看完整文本、升级和批注。
+
+需要目标的牌进入目标选择状态。
+
+流程区域必须能够容纳多个流程；数量增加时使用滚动、折叠或其他不会破坏战斗 UI 的布局。
+
+地图界面必须可视化节点、连接、当前位置、已访问路径以及当前可选择节点。
+
+## Debug / Developer Tools
+
+加入开发模式。
+
+至少支持：
+
+* 指定 seed 开始 Run
+* 添加任意卡牌
+* 添加任意遗物
+* 添加金币
+* 回复生命
+* 直接进入指定战斗
+* 升级卡牌
+* 给卡牌添加测试批注
+* 制造副本
+* 强制把牌加入流程
+* 直接打包流程
+* 跳转地图节点
+* 查看 combat event log
+
+提供详细但可关闭的事件日志，以便检查复杂的副本、批注和流程交互。
+
+## 测试
+
+为核心逻辑编写单元测试。
+
+重点覆盖：
+
+* draw/discard/shuffle
+* Exhaust
+* Ethereal
+* Retain
+* Power
+* card upgrade
+* annotation stacking
+* copying annotated cards
+* copying copies
+* played copies returning to discard
+* unplayed copies exhausting at end of turn
+* workflow packing
+* multiple simultaneous workflows
+* workflow cycling 1→2→3→1
+* workflow execution not triggering card-play events
+* annotated cards retaining annotations when placed into workflow
+* map connectivity
+* deterministic seeded map generation
+* save/load preservation of modified cards and workflows
+
+架构优先保证以后能够添加完全不同机制的新角色，而无需重写 CombatEngine。
+
+先完成一个从角色选择开始、能够经过地图、战斗、奖励并最终击败 Boss 的完整 vertical slice。正式卡牌、美术、平衡和更多角色之后再添加。
