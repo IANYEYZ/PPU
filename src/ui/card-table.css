@@ -1,0 +1,27 @@
+.rarity-uncommon{border-color:#7896a0!important}.rarity-rare{border-color:#b89a4c!important}.rarity-starter{border-color:#9e715b!important}
+.rarity-uncommon .card-type{color:#607f8b}.rarity-rare .card-type{color:#9a7c32}.rarity-starter .card-type{color:#996a4e}
+.game-card .card-text{max-height:155px;overflow-y:auto;scrollbar-width:thin}.inspect-layout .card-text{max-height:none}
+.combat-choice-backdrop{position:fixed;inset:0;background:#26372c99;backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+.combat-choice{width:min(1120px,96vw);max-height:92vh;background:#f5f0e1;border:1px solid #a8b296;box-shadow:8px 8px 0 #26372c33;display:flex;flex-direction:column}
+.choice-heading{padding:22px 26px 16px;border-bottom:1px solid var(--line)}.choice-heading h2{font-size:21px;margin:12px 0}.choice-heading p{font-size:12px;color:#7c886c;line-height:1.8;margin:0}
+.choice-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));align-items:start;gap:22px 15px;padding:26px;overflow:auto;scrollbar-width:thin}.choice-option{position:relative;min-width:0}.choice-option .card-wrap{width:100%}
+.choice-order{position:absolute;right:3px;top:-12px;border:1px solid #9bab87;border-radius:50%;background:#f4f1df;color:#79915e;width:25px;height:25px;text-align:center;line-height:23px;font-size:12px;pointer-events:none}
+.choice-option.chosen .game-card,.choice-option.chosen>button{outline:3px solid #7c915f;outline-offset:2px}.choice-option.chosen .choice-order{background:#617e4b;color:#fff9e5}
+.choice-footer{display:flex;justify-content:flex-end;gap:14px;padding:20px 26px;border-top:1px solid var(--line)}
+.annotation-option,.workflow-option{background:#faf5e6;border:1px solid #b9bea6;padding:20px 16px;text-align:left;width:100%;min-height:150px}.annotation-option b,.workflow-option b{font-size:13px}.annotation-option p,.workflow-option p{font-size:11px;color:#818c70;line-height:1.8;margin:12px 0 0}.workflow-option .next{background:#e1e7cf;color:#566e43;padding:5px}
+.pool-filters{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}.pool-filters .secondary{font-size:11px;padding:8px 12px}
+@media(max-width:720px){.combat-choice-backdrop{padding:12px}.combat-choice{max-height:95vh}.choice-heading{padding:18px}.choice-heading h2{font-size:17px;line-height:1.6}.choice-options{grid-template-columns:repeat(2,minmax(0,1fr));padding:20px 15px;gap:24px 12px}.choice-footer{padding:15px}.topbar nav{gap:7px}.topbar nav button[data-action=pool]{font-size:8px}.topbar .dev-toggle{padding:5px;font-size:8px}}
+/* Rarity stays visible on every card, including rewards, hand and selections. */
+.game-card.rarity-common{border:2px solid #fcfcf6!important;box-shadow:0 0 0 1px #b9b9a7,0 3px 5px #313a2520}
+.game-card.rarity-uncommon{border:2px solid #519bd5!important;box-shadow:0 0 0 1px #3c6e91,0 3px 5px #313a2520}
+.game-card.rarity-rare{border:2px solid #dca833!important;box-shadow:0 0 0 1px #967124,0 3px 5px #313a2520}
+.game-card.rarity-basic,.game-card.rarity-starter{border:2px solid #bcb9a5!important}
+.hand-zone{min-width:0}.hand-choice-veil{position:fixed;inset:0;z-index:45;background:#25322688;backdrop-filter:blur(3px)}
+.hand-zone.selecting-hand{position:relative;z-index:51;background:#f5f0e1;border-top:2px solid #778862;padding:12px 14px 0;box-shadow:0 -10px 36px #15251540}
+.hand-choice-controls{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:8px 4px 0}.hand-choice-controls h2{font-size:18px;margin:7px 0;color:#3b5238}.hand-choice-controls p{font-size:11px;color:#647657;margin:6px 0}
+.hand-choice-actions{display:flex;gap:10px;flex-shrink:0}.hand-choice-actions button{padding:12px 18px;font-size:12px}
+.hand-choice-card{position:relative;flex-shrink:0}.hand-choice-card.chosen{transform:translateY(-6px)}.hand-choice-card.chosen .game-card{outline:3px solid #718c55;outline-offset:3px}.hand-choice-card.chosen .choice-order{background:#617e4b;color:white}.hand-choice-card.ineligible{opacity:.28}.hand-choice-card .choice-order{top:0;right:3px;z-index:3}
+.hand-zone.selecting-hand .hand{padding-top:22px}.hand-zone.selecting-hand .game-card:not(:disabled):hover{transform:translateY(-3px)}
+.event-selection{text-align:left;margin:28px 0}.event-selection h2{font-size:20px}.event-card-pick{width:100%;margin-top:12px;padding:10px!important;font-size:12px}.event-log-summary{border-top:1px solid #d2d0b8;margin:20px 0;padding:12px;color:#778465;font-size:12px}.node-result p{font-size:12px;line-height:1.8}
+.next-combat-notes{display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:#6b784e;margin:12px 0}.next-combat-notes span{border:1px dashed #a5b18d;padding:5px 9px}
+@media(max-width:720px){.hand-choice-controls{align-items:flex-start;flex-direction:column;gap:6px}.hand-choice-controls h2{font-size:15px}.hand-choice-actions{align-self:flex-end}.hand-zone.selecting-hand{padding:8px}.hand-choice-actions button{padding:9px 12px;font-size:11px}}

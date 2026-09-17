@@ -9,13 +9,17 @@ export function resolvedCard(card, definitions) {
   result.keywords = [...(result.keywords || [])];
   result.effects = [...(result.effects || [])];
   for (const mod of [...(card.modifiers || []), ...(card.annotations || [])]) {
-    result.cost = Math.max(0, result.cost + (mod.costDelta || 0));
+    if (mod.costSet !== undefined) result.cost = mod.costSet;
+    result.cost = mod.costDelta < 0 ? Math.min(result.cost, Math.max(mod.costFloor || 0, result.cost + mod.costDelta)) : result.cost + (mod.costDelta || 0);
     result.effects.push(...structuredClone(mod.effects || []));
     result.keywords.push(...(mod.keywords || []));
     if (mod.effectAdjustments) for (const effect of result.effects) for (const rule of mod.effectAdjustments) if (effect.type === rule.type) effect.amount = Math.max(0, (effect.amount || 0) + rule.amountDelta);
   }
-  if (card.isCopy) result.keywords.push('Ethereal');
+  if (card.isCopy && !card.copyEtherealRemoved) result.keywords.push('Ethereal');
+  for (const mod of [...(card.modifiers || []), ...(card.annotations || [])]) result.keywords = result.keywords.filter(k => !(mod.removeKeywords || []).includes(k));
+  if (card.copyEtherealRemoved) result.keywords = result.keywords.filter(k => k !== 'Ethereal');
   result.keywords = [...new Set(result.keywords)];
+  if(result.keywords.includes('AutoWorkflow'))result.workflow=true;
   result.name = def.name + (card.upgrade ? '+' : '');
   return result;
 }
@@ -24,5 +28,6 @@ export function copyCard(source, id) {
   const result = structuredClone(source);
   result.id = id; result.isCopy = true; result.sourceId = source.id; result.rootSourceId = source.rootSourceId || source.id;
   result.modifiers = result.modifiers.filter(mod => mod.copyable !== false);
+  result.copyEtherealRemoved = false;
   return result;
 }

@@ -1,4 +1,5 @@
 import { statuses, powers } from '../data/statuses.js';
+import { bindTriggers } from './triggers.js';
 export function attackDamage(actor, amount) {
   let result = amount;
   for (const [id, stacks] of Object.entries(actor.statuses)) result += (statuses[id]?.damageAdd || 0) * stacks;
@@ -12,10 +13,7 @@ export function bindStatuses(engine) {
   engine.bus.on('enemy:turn-end', ({ enemyId }) => { const enemy = engine.state.enemies.find(e => e.id === enemyId); if (enemy) decayStatuses(enemy); }, 50);
 }
 export function bindPower(engine, powerId) {
-  for (const trigger of powers[powerId].triggers) engine.bus.on(trigger.event, () => {
-    const stacks = engine.state.player.powers[powerId] || 0;
-    engine.effects.execute(trigger.effects.map(e => ({ ...e, amount: e.amount === '$stacks' ? stacks : e.amount })), {});
-  }, 10);
+  bindTriggers(engine,`power:${powerId}`,powers[powerId].triggers,()=>engine.state.player.powers[powerId] || 0,10);
 }
 export function addPower(engine, id, amount) {
   if (!powers[id]) throw new Error(`Unknown power ${id}`);

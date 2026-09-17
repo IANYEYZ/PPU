@@ -1,5 +1,6 @@
 export function targetingFor(card) {
-  const cardTarget = card.target === 'card' || card.effects.some(e => e.target === 'card' || e.type === 'annotate' || e.type === 'copy');
+  if(card.keywords?.includes('AutoWorkflow'))return {card:false,enemy:false};
+  const cardTarget = card.target === 'card' || card.effects.some(e => e.target === 'card' || ((e.type === 'annotate' || e.type === 'copy') && !e.source));
   const enemyTarget = card.target === 'enemy' || card.effects.some(e => e.target === 'enemy');
   return { card: cardTarget, enemy: enemyTarget };
 }
@@ -11,6 +12,7 @@ export function validateTargets(engine, source, targets = {}) {
 export function effectEnemies(engine, effect, context) {
   const alive = engine.state.enemies.filter(e => e.hp > 0);
   if (effect.target === 'allEnemies') return alive;
+  if (effect.target === 'randomEnemy') return [engine.rng.pick(alive)].filter(Boolean);
   const selected = alive.find(e => e.id === context.enemyId);
   // A normal targeted card keeps its selected target across all effects.
   // Automatic workflow actions may retarget when an earlier effect killed it.

@@ -12,3 +12,10 @@ export const encounters = {
   audit: { name: '突击审查', enemies: ['audit'], elite: true },
   director: { name: '最终审批', enemies: ['director'], boss: true },
 };
+// Replace these profiles when the designed Act 2/3 enemy lists arrive.
+for(const [act,hpScale,damageScale] of [[2,1.4,1.2],[3,1.8,1.4]]){
+  for(const id of ['queue','paper','phone','audit','director']){
+    const source=enemies[id];enemies[`${id}${act}`]={...structuredClone(source),name:id==='director'?`${act===2?'协调':'总务'}主管`:`${source.name} · ${act}层`,title:`第${act}幕 · 占位敌人`,hp:Math.round(source.hp*hpScale),pattern:source.pattern.map(move=>({...move,...(['attack','block'].includes(move.kind)?{amount:Math.round(move.amount*damageScale)}:{})}))};
+  }
+  for(const id of ['queue','backlog','calls','audit','director']){const source=encounters[id];encounters[`${id}${act}`]={...source,name:`第${act}幕 · ${source.name}`,enemies:source.enemies.map(enemy=>`${enemy}${act}`)};}
+}
